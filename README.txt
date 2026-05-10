@@ -5,7 +5,7 @@ COSC3801/3015 Assignment 3 Milestone II - HD Web App Skeleton
 Clone repo:
 
 ```bash
-git clone
+gh repo clone Huepham0717/beauty-review-webapp
 
 How to run:
 1. Create a virtual environment
