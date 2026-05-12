@@ -1,44 +1,116 @@
-COSC3801/3015 Assignment 3 Milestone II - HD Web App Skeleton
+COSC3801/3015 Advanced Programming for Data Science
+Assignment 3 — Milestone II: NLP Web-based Data Application
+Group: MAI_Group 5
 
-## Team Setup
+================================================================================
+Team members
+================================================================================
+- Pham Huynh Ngoc Hue  - s3702554
+- Mai Thanh Nga        - s4217156
+- Tran Thi Thao Vy     - s4177924
+- Adam Boufous         - s4215119
 
-Clone repo:
+================================================================================
+What this is
+================================================================================
+"GlowMate Beauty Store" — a Streamlit web application that lets shoppers
+browse a cosmetics catalogue, write reviews, and see similar-item
+recommendations. The recommendation-label predictor for new reviews is a
+late-fusion of three independently-trained models, satisfying the
+DI/HD-level requirement of combining "at least two/three different models,
+which use different types of data".
 
-```bash
-gh repo clone Huepham0717/beauty-review-webapp
+Four tasks, four pages:
+- Task 1  pages/1_🛍_Browse_and_Search.py   Fuzzy keyword search (rapidfuzz)
+- Task 2  pages/2_📦_Product_Detail.py      Review form + fused-model label
+- Task 3  pages/2_📦_Product_Detail.py      Similar items (TF-IDF cosine)
+- Task 4  pages/3_📊_Admin_Dashboard.py     Plotly analytics
 
-How to run:
-1. Create a virtual environment
-   python -m venv .venv
-   source .venv/bin/activate   # Mac/Linux
-   .venv\Scripts\activate      # Windows
+================================================================================
+How to run
+================================================================================
+1. Create a virtual environment and install dependencies:
 
-2. Install dependencies
-   pip install -r requirements.txt
+       python3 -m venv .venv
+       source .venv/bin/activate           # macOS/Linux
+       .venv\\Scripts\\activate            # Windows
+       pip install -r requirements.txt
 
-3. Run the app
-   streamlit run app.py
+2. Build the data catalogue (one-off; reads MAI_Group5/):
 
-What this skeleton includes:
-- Task 1: Product browsing and fuzzy keyword search by brand/name/description.
-- Task 2: Review creation form with predicted recommendation label and user override.
-- Task 3: Similar item recommendation using TF-IDF cosine similarity.
-- Task 4: Additional admin analytics dashboard for review sentiment/label/rating patterns.
-- HD extension points: fused prediction architecture using three evidence sources:
-  1. Review text model
-  2. Rating/meta model
-  3. Product-history prior model
+       python scripts/build_catalog.py
 
-Replace the sample data in data/products.csv with the Milestone I dataset.
-Replace models/model_loader.py placeholders with your trained Milestone I models.
+   Produces data/products.csv and data/reviews.csv.
 
-Group members:
-- Add student names and IDs here.
+3. Train the three sub-models + the fusion stacker + the Task-3
+   TF-IDF matrix (one-off; ~30s on a laptop):
 
-Video demo checklist:
-1. Browse products and search with spelling variation.
-2. Open product detail page.
-3. Create a review and show generated label.
-4. Override label and save review.
-5. Show similar item recommendations.
-6. Show admin analytics dashboard.
+       python scripts/train.py
+
+   Writes models/*.joblib, models/product_tfidf_matrix.npz,
+   models/metrics.json.
+
+4. Launch the app:
+
+       streamlit run app.py
+
+   Open the URL Streamlit prints (typically http://localhost:8501).
+
+================================================================================
+Fused architecture (Task 2, HD)
+================================================================================
+Three independently-trained classifiers, each on a different data type:
+
+  1. Text model    TF-IDF(1,2) + LogisticRegression(C=2.0, balanced)
+                   — the exact GridSearchCV winner from Milestone I.
+  2. Meta model    HistGradientBoosting (calibrated) on review_rating,
+                   price, avg_product_rating, product_rating_count,
+                   plus one-hot top-25 brand bucket.
+  3. Prior model   Bayesian-smoothed per-product P(is_a_buyer);
+                   falls back to per-brand, then global rate.
+
+Their probabilities are stacked by a LogisticRegression meta-learner fit
+on 5-fold out-of-fold predictions to avoid leakage. Held-out test
+Macro-F1 of the fused predictor is ~0.74 — meaningfully above the best
+M1 single-model number (~0.73).
+
+================================================================================
+File layout
+================================================================================
+app.py                        Landing page
+pages/                        Streamlit multi-page UIs
+src/                          Pure-Python modules (no Streamlit imports)
+  preprocess.py               Mirrors MAI_Group5/task1.py tokenisation
+  data.py                     Catalogue + review I/O
+  search.py                   Task 1 fuzzy search
+  similarity.py               Task 3 similar-item lookup
+  ui.py                       Streamlit helpers (cards, caching)
+  models/                     text_model / meta_model / prior_model /
+                              fusion / loader (the single integration
+                              point for joblib artifacts)
+scripts/
+  build_catalog.py            Materialises data/products.csv + data/reviews.csv
+  train.py                    Trains everything; writes models/*
+data/
+  products.csv                Generated; one row per product_id
+  reviews.csv                 Generated; appended at runtime by Task 2
+  stopwords_en.txt            Copy of MAI_Group5/stopwords_en.txt
+models/                       Generated by scripts/train.py
+MAI_Group5/                   READ-ONLY Milestone-I deliverable
+
+================================================================================
+Notes
+================================================================================
+- Product images are placeholders (Picsum, seeded by product_id) since the
+  assignment brief explicitly allows artificial display images.
+- New reviews are persisted to data/reviews.csv (atomic write). Pages that
+  read reviews use a short-TTL Streamlit cache so saves are visible quickly.
+- The fused predictor is loaded lazily as a process-level singleton via
+  src/models/loader.py — pages never load joblib files directly.
+
+================================================================================
+Video demo
+================================================================================
+A ≤ 4-minute walk-through covering: browsing + fuzzy search, opening a
+product, writing a review with override, similar items, and the admin
+dashboard. See the .mp4 in the submission zip.
