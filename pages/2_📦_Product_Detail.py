@@ -19,14 +19,35 @@ st.set_page_config(page_title="Product — GlowMate", page_icon="📦", layout="
 
 products = cached_products()
 pid_raw = st.query_params.get("product_id")
+if pid_raw is None and "selected_product_id" in st.session_state:
+    pid_raw = st.session_state.pop("selected_product_id")
+    st.query_params["product_id"] = str(pid_raw)
+
 if pid_raw is None:
-    st.warning("No product selected. Pick one from the **Browse** page.")
-    st.page_link("pages/1_🛍_Browse_and_Search.py", label="Go to Browse", icon="🛍")
-    st.stop()
+    st.info(
+        "Pick a product to view its detail, similar items, and write a review. "
+        "You can also reach this page by clicking **View details** on the Browse page."
+    )
+    options = products.assign(
+        _label=lambda d: d["brand_name"].fillna("(no brand)") + " — " + d["product_title"].fillna("(no title)")
+    )
+    pick = st.selectbox(
+        "Choose a product",
+        options=options["product_id"].tolist(),
+        format_func=lambda pid: options.loc[options["product_id"] == pid, "_label"].iloc[0],
+        index=None,
+        placeholder="Type to filter by brand or product name…",
+    )
+    if pick is None:
+        st.page_link("pages/1_🛍_Browse_and_Search.py", label="…or go to Browse", icon="🛍")
+        st.stop()
+    st.query_params["product_id"] = str(pick)
+    st.rerun()
 
 product = product_row(pid_raw, products)
 if product is None:
     st.error(f"Product `{pid_raw}` not found.")
+    st.query_params.clear()
     st.stop()
 
 # === Header

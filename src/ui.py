@@ -47,5 +47,8 @@ def render_product_card(row: dict, *, score: float | None = None, key_prefix: st
         if score is not None:
             st.caption(f"match score: {score:.0f}" if score > 1 else f"similarity: {score:.2f}")
         if st.button("View details", key=f"{key_prefix}view-{pid}", use_container_width=True):
-            st.query_params["product_id"] = str(pid)
+            # st.switch_page does not preserve query_params set in the same run,
+            # so we hand the selection over via session_state and let Page 2
+            # write it into the URL on arrival.
+            st.session_state["selected_product_id"] = str(pid)
             st.switch_page("pages/2_📦_Product_Detail.py")
