@@ -19,6 +19,9 @@ st.set_page_config(page_title="Product — GlowMate", page_icon="📦", layout="
 
 products = cached_products()
 pid_raw = st.query_params.get("product_id")
+if pid_raw is None and "selected_product_id" in st.session_state:
+    pid_raw = st.session_state.pop("selected_product_id")
+    st.query_params["product_id"] = str(pid_raw)
 
 if pid_raw is None:
     st.info(
