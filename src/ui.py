@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path
 from urllib.parse import quote
 
 import pandas as pd
@@ -81,35 +80,14 @@ def _category_meta(title: str | None) -> tuple[str, str, str, str]:
     return _DEFAULT_META
 
 
-_IMAGES_DIR = Path(__file__).resolve().parent.parent / "data" / "images"
-_LOCAL_EXTS = (".jpg", ".jpeg", ".png", ".webp")
-
-
-def _local_image(product_id) -> Path | None:
-    """Look for ``data/images/<product_id>.<ext>``; return the first match."""
-    if not _IMAGES_DIR.exists():
-        return None
-    for ext in _LOCAL_EXTS:
-        p = _IMAGES_DIR / f"{product_id}{ext}"
-        if p.exists():
-            return p
-    return None
-
-
 def product_image(product_id, title: str | None = None) -> str:
-    """Real product photo if available, else an SVG category card.
+    """Deterministic SVG category card for the product.
 
-    Real photo lookup:
-        ``data/images/<product_id>.{jpg, jpeg, png, webp}``
-
-    Drop a curated photo there for any product you want to show in the
-    demo — the page will pick it up automatically (Streamlit's st.image
-    accepts a local Path). For all other products we render a deterministic
-    SVG card built from the category extracted from the title.
+    Generated inline from the category extracted from ``title`` — gradient
+    + emoji + label. No external requests, no real-photo dependency.
+    The brief allows artificial display images, so an SVG placeholder is
+    compliant for every product.
     """
-    local = _local_image(product_id)
-    if local is not None:
-        return str(local)
     label, emoji, c1, c2 = _category_meta(title)
     seed = int(hashlib.md5(str(product_id).encode()).hexdigest()[:8], 16)
     angle = seed % 360
