@@ -1,6 +1,6 @@
 """Task 1 fuzzy search over the product catalogue.
 
-This module builds a per-product search string from `brand_name + product_title + product_tags`,
+This module builds a per-product search string from `brand_name + product_name + product_tags`,
 normalises both the user query and the product text (brand aliases, stop words),
 then ranks matches using RapidFuzz `WRatio`. Normalisation ensures that spelling variations
 such as 'Maybe line' and 'maybe line New York' yield exactly the same search results.
@@ -56,13 +56,15 @@ def _normalize(text: str) -> str:
 
 
 def _searchable(row) -> str:
-    """Build a normalised search string for a single product row."""
-    parts = [
-        str(row.get("brand_name") or ""),
-        str(row.get("product_name") or ""),   # <--- product_name, pas product_title
-        str(row.get("product_tags") or ""),
-    ]
-    raw = " ".join(p for p in parts if p)
+    """Build a normalised search string for a single product row,
+    carefully skipping NaN or 'nan' strings that pollute the text."""
+    parts = []
+    for col in ("brand_name", "product_name", "product_tags"):
+        val = row.get(col)
+        # Keep only non‑null, non‑empty values that are not the string "nan"
+        if pd.notna(val) and str(val).strip().lower() not in ("", "nan", "none"):
+            parts.append(str(val).strip())
+    raw = " ".join(parts)
     return _normalize(raw)
 
 
@@ -73,7 +75,7 @@ def search(
     query: str,
     products: pd.DataFrame,
     limit: int = 60,
-    threshold: int = 55,
+    threshold: int = 65,   # raised to avoid false positives with short words
 ) -> pd.DataFrame:
     """Return products matching the query, ranked by fuzzy relevance score.
 
@@ -86,7 +88,7 @@ def search(
     query : str
         Raw user input (e.g. "maybe line new york").
     products : pd.DataFrame
-        Product catalogue; must contain at least `brand_name`, `product_title`
+        Product catalogue; must contain at least `brand_name`, `product_name`
         and optionally `product_tags`.
     limit : int
         Maximum number of results to return.
@@ -104,19 +106,17 @@ def search(
 
     # Normalise the user input
     query_norm = _normalize(query)
+    if not query_norm:
+        return products.copy()
 
-    # Build normalised strings for every product
-    choices = {idx: _searchable(row) for idx, row in products.iterrows()}
+    # Build normalised strings for every product (skip empty texts)
+    choices = {}
+    for idx, row in products.iterrows():
+        text = _searchable(row)
+        if text:   # only include if there is actual searchable text
+            choices[idx] = text
 
-    # Perform fuzzy extraction (fast batch scoring)
-    matches = process.extract(
-        query_norm,
-        choices,
-        scorer=fuzz.WRatio,   # Weighted ratio – robust to token order changes
-        limit=limit,
-    )
-    hits = [(idx, score) for _, score, idx in matches if score >= threshold]
-        # Build token filter to reject matches with no exact token overlap
+    # ---------- Token filter: keep only products that share at least one token with the query ----------
     query_tokens = set(query_norm.split())
     filtered_choices = {}
     for idx, text in choices.items():
@@ -124,7 +124,16 @@ def search(
             filtered_choices[idx] = text
     if not filtered_choices:
         return products.iloc[0:0].assign(_score=[])
-    choices = filtered_choices
+
+    # Perform fuzzy extraction on the pre‑filtered set
+    matches = process.extract(
+        query_norm,
+        filtered_choices,
+        scorer=fuzz.WRatio,   # Weighted ratio – robust to token order changes
+        limit=limit,
+    )
+    hits = [(idx, score) for _, score, idx in matches if score >= threshold]
+
     # No match → return empty DataFrame with a _score column
     if not hits:
         return products.iloc[0:0].assign(_score=[])
@@ -135,3 +144,4 @@ def search(
     out = products.loc[idx_order].copy()
     out["_score"] = [scores[i] for i in idx_order]
     return out.reset_index(drop=True)
+    
