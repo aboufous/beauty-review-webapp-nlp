@@ -10,7 +10,9 @@ sys.path.insert(0, str(ROOT))
 
 import pandas as pd  # noqa: E402
 import plotly.express as px  # noqa: E402
+import plotly.graph_objects as go  # noqa: E402
 import streamlit as st  # noqa: E402
+from plotly.subplots import make_subplots  # noqa: E402
 
 from src.models.loader import METRICS_PATH  # noqa: E402
 from src.ui import cached_reviews  # noqa: E402
@@ -25,9 +27,7 @@ st.caption(
 )
 
 reviews = cached_reviews()
-reviews["is_a_buyer"] = reviews["is_a_buyer"].astype("boolean")
 
-# === Model metrics card
 st.subheader("Held-out test metrics")
 if METRICS_PATH.exists():
     metrics = json.loads(METRICS_PATH.read_text())
@@ -47,7 +47,6 @@ else:
 
 st.divider()
 
-# === Charts row 1
 c1, c2 = st.columns(2)
 with c1:
     st.markdown("**Rating distribution**")
@@ -83,7 +82,6 @@ with c2:
     fig.update_layout(height=350, margin=dict(l=10, r=10, t=10, b=10), yaxis={"categoryorder": "total ascending"})
     st.plotly_chart(fig, use_container_width=True)
 
-# === Charts row 2
 st.markdown("**Review volume + buyer-rate over time**")
 reviews["_date"] = pd.to_datetime(reviews["review_date"], errors="coerce")
 ts = (
@@ -94,14 +92,28 @@ ts = (
     .reset_index()
 )
 if len(ts):
-    fig = px.area(ts, x="month", y="volume", labels={"volume": "Reviews per month"})
-    fig.add_scatter(x=ts["month"], y=ts["buyer_rate"] * ts["volume"].max(), name="Buyer rate (scaled)", mode="lines")
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Scatter(
+            x=ts["month"], y=ts["volume"], name="Reviews per month",
+            mode="lines", fill="tozeroy", line=dict(color="#3b82f6"),
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=ts["month"], y=ts["buyer_rate"], name="Buyer rate",
+            mode="lines", line=dict(color="#f97316", dash="dot"),
+        ),
+        secondary_y=True,
+    )
+    fig.update_yaxes(title_text="Reviews per month", secondary_y=False)
+    fig.update_yaxes(title_text="Buyer rate", range=[0, 1], tickformat=".0%", secondary_y=True)
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=10, b=10))
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("No parseable `review_date` values.")
 
-# === Predicted vs final
 st.markdown("**Predicted vs. final label** — user-submitted reviews only")
 user_rows = reviews.dropna(subset=["predicted_label"])
 if len(user_rows):

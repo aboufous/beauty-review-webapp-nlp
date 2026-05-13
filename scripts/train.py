@@ -192,7 +192,6 @@ def main() -> int:
     products = pd.read_csv(PRODUCTS_CSV)
     reviews = reviews.dropna(subset=["is_a_buyer", "review_text"]).reset_index(drop=True)
     reviews["is_a_buyer"] = reviews["is_a_buyer"].astype(bool)
-    # Join product-level fields (price/avg_rating/etc come from raw rows; keep as-is)
     y = reviews["is_a_buyer"]
     df_train, df_test, y_train, y_test = train_test_split(
         reviews, y, test_size=0.15, stratify=y, random_state=SEED
