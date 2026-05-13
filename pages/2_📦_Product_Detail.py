@@ -13,7 +13,7 @@ import streamlit as st  # noqa: E402
 from src.data import append_review, product_row, reviews_for_product  # noqa: E402
 from src.models.loader import load_predictor  # noqa: E402
 from src.similarity import similar_products  # noqa: E402
-from src.ui import cached_products, cached_reviews, placeholder_image, rating_stars, render_product_card  # noqa: E402
+from src.ui import cached_products, cached_reviews, product_image, rating_stars, render_product_card  # noqa: E402
 
 st.set_page_config(page_title="Product — GlowMate", page_icon="📦", layout="wide")
 
@@ -53,7 +53,10 @@ if product is None:
 # === Header
 top_l, top_r = st.columns([1, 2])
 with top_l:
-    st.image(placeholder_image(product["product_id"]), use_column_width=True)
+    st.image(
+        product_image(product["product_id"], title=product.get("product_title")),
+        use_column_width=True,
+    )
 with top_r:
     st.markdown(f"### {product.get('product_title') or '(untitled)'}")
     st.caption(f"**Brand:** {product.get('brand_name')}")
