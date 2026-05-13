@@ -81,13 +81,35 @@ def _category_meta(title: str | None) -> tuple[str, str, str, str]:
     return _DEFAULT_META
 
 
-def product_image(product_id, title: str | None = None) -> str:
-    """Inline SVG (data URI) showing a category-coloured card with an emoji.
+_IMAGES_DIR = Path(__file__).resolve().parent.parent / "data" / "images"
+_LOCAL_EXTS = (".jpg", ".jpeg", ".png", ".webp")
 
-    No external requests, no faces, no model-generated content — just an
-    SVG built from the product title's category. Deterministic per
-    product_id (the seed only varies the gradient angle for visual variety).
+
+def _local_image(product_id) -> Path | None:
+    """Look for ``data/images/<product_id>.<ext>``; return the first match."""
+    if not _IMAGES_DIR.exists():
+        return None
+    for ext in _LOCAL_EXTS:
+        p = _IMAGES_DIR / f"{product_id}{ext}"
+        if p.exists():
+            return p
+    return None
+
+
+def product_image(product_id, title: str | None = None) -> str:
+    """Real product photo if available, else an SVG category card.
+
+    Real photo lookup:
+        ``data/images/<product_id>.{jpg, jpeg, png, webp}``
+
+    Drop a curated photo there for any product you want to show in the
+    demo — the page will pick it up automatically (Streamlit's st.image
+    accepts a local Path). For all other products we render a deterministic
+    SVG card built from the category extracted from the title.
     """
+    local = _local_image(product_id)
+    if local is not None:
+        return str(local)
     label, emoji, c1, c2 = _category_meta(title)
     seed = int(hashlib.md5(str(product_id).encode()).hexdigest()[:8], 16)
     angle = seed % 360

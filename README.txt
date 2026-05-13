@@ -101,8 +101,14 @@ MAI_Group5/                   READ-ONLY Milestone-I deliverable
 ================================================================================
 Notes
 ================================================================================
-- Product images are placeholders (Picsum, seeded by product_id) since the
-  assignment brief explicitly allows artificial display images.
+- Product images: drop a real photo at data/images/<product_id>.<ext>
+  (jpg / jpeg / png / webp) and the app will pick it up automatically.
+  For every product without a local file, an SVG card is generated on the
+  fly — gradient colour and emoji chosen from the category extracted from
+  the product title (lipstick → 💄, mascara → 🖤, shampoo → 🧴, …). The
+  brief explicitly allows artificial display images, so the SVG fallback
+  is compliant; drop real photos in for the items you plan to show in
+  the demo video.
 - New reviews are persisted to data/reviews.csv (atomic write). Pages that
   read reviews use a short-TTL Streamlit cache so saves are visible quickly.
 - The fused predictor is loaded lazily as a process-level singleton via
