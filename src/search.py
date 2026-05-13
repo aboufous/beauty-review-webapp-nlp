@@ -116,7 +116,15 @@ def search(
         limit=limit,
     )
     hits = [(idx, score) for _, score, idx in matches if score >= threshold]
-
+        # Build token filter to reject matches with no exact token overlap
+    query_tokens = set(query_norm.split())
+    filtered_choices = {}
+    for idx, text in choices.items():
+        if query_tokens.intersection(text.split()):
+            filtered_choices[idx] = text
+    if not filtered_choices:
+        return products.iloc[0:0].assign(_score=[])
+    choices = filtered_choices
     # No match → return empty DataFrame with a _score column
     if not hits:
         return products.iloc[0:0].assign(_score=[])
