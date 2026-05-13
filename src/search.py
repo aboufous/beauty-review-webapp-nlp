@@ -59,7 +59,7 @@ def _searchable(row) -> str:
     """Build a normalised search string for a single product row."""
     parts = [
         str(row.get("brand_name") or ""),
-        str(row.get("product_title") or ""),
+        str(row.get("product_name") or ""),   # <--- product_name, pas product_title
         str(row.get("product_tags") or ""),
     ]
     raw = " ".join(p for p in parts if p)
