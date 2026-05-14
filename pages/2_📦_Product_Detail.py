@@ -12,6 +12,7 @@ import streamlit as st  # noqa: E402
 
 from src.data import append_review, product_row, reviews_for_product  # noqa: E402
 from src.models.loader import load_predictor  # noqa: E402
+from src.recommender import has_dense_vectors  # noqa: E402
 from src.similarity import similar_products  # noqa: E402
 from src.ui import cached_products, cached_reviews, product_image, rating_stars, render_product_card  # noqa: E402
 
@@ -195,10 +196,51 @@ for _, r in review_df.head(show_n).iterrows():
             override = " (user overrode)" if bool(r.get("user_overrode")) else ""
             st.caption(f"_Model predicted: {label} @ {float(r.get('predicted_proba') or 0):.0%}{override}_")
 
-# === Task 3 — Similar items
+# === Task 3 — Similar items (HD-level hybrid recommender)
 st.divider()
 st.subheader("✨ Similar items you might like")
-sim = similar_products(product["product_id"], products, k=6)
+st.caption(
+    "Hybrid recommender — fuses lexical (TF-IDF), semantic (FastText), "
+    "attribute (brand & category) and numeric (price & rating) similarity, "
+    "with MMR diversity re-ranking. See notebooks/Task3_Recommendation.ipynb."
+)
+
+if not has_dense_vectors():
+    st.warning(
+        "Semantic embeddings not built — running in 3-signal fallback "
+        "(lexical + attribute + numeric). "
+        "Run `python scripts/build_recommender.py` to enable the full hybrid."
+    )
+
+with st.expander("Recommender controls", expanded=False):
+    sim_k = st.slider("How many recommendations", 3, 12, 6)
+    sim_mmr = st.toggle(
+        "Diversity re-ranking (MMR)",
+        value=True,
+        help="On: MMR penalises near-duplicates so the list shows variety.",
+    )
+    if sim_mmr:
+        sim_lambda = st.slider(
+            "λ  —  relevance vs diversity",
+            min_value=0.0, max_value=1.0, value=0.7, step=0.05,
+            help="1.0 = pure relevance · 0.0 = pure diversity · 0.7 = default.",
+        )
+        st.caption(
+            f"At λ = **{sim_lambda:.2f}** the engine puts **{sim_lambda:.0%}** weight on "
+            f"relevance and **{1 - sim_lambda:.0%}** on diversity. "
+            "Drag toward 0.0 to force more variety, toward 1.0 to disable the diversity push."
+        )
+    else:
+        sim_lambda = 0.7
+        st.caption(
+            "Toggle MMR on to expose the relevance ↔ diversity trade-off slider. "
+            "With MMR off, the list collapses to close variants of the same product line."
+        )
+
+sim = similar_products(
+    product["product_id"], products, k=sim_k,
+    use_mmr=sim_mmr, mmr_lambda=sim_lambda,
+)
 if len(sim) == 0:
     st.info("No similar items available.")
 else:
@@ -206,3 +248,13 @@ else:
     for i, (_, row) in enumerate(sim.iterrows()):
         with cols[i % 3]:
             render_product_card(row.to_dict(), score=row.get("_score"), key_prefix="sim")
+            with st.expander("Why is this similar?"):
+                bc = st.columns(4)
+                bc[0].metric("Semantic",  f"{row.get('_score_semantic',  0):.2f}")
+                bc[1].metric("Lexical",   f"{row.get('_score_lexical',   0):.2f}")
+                bc[2].metric("Attribute", f"{row.get('_score_attribute', 0):.2f}")
+                bc[3].metric("Numeric",   f"{row.get('_score_numeric',   0):.2f}")
+                st.caption(
+                    "Final = 0.50·semantic + 0.20·lexical + 0.20·attribute + 0.10·numeric, "
+                    "then MMR re-ranked (λ=0.7) for diversity."
+                )
