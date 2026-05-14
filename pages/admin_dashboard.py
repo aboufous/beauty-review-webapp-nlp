@@ -175,12 +175,11 @@ st.divider()
 st.subheader("Model quality snapshot")
 if METRICS_PATH.exists():
     metrics = json.loads(METRICS_PATH.read_text())
-    st.metric(
-        "Active Task 3 best model — Macro-F1",
-        "0.711",
-        help="Notebook GridSearchCV result: TF-IDF(1,2)+one-hot metadata + LogisticRegression(C=1.0, balanced).",
+    st.metric("Active fused model — Macro-F1", f"{metrics['test_macro_f1']['fused']:.3f}")
+    st.caption(
+        "The active app prediction is the DI/HD fusion model. "
+        "Task 3 notebook best single model Macro-F1 = 0.7110 and is retained as benchmark documentation."
     )
-    st.caption("Legacy fused-model metrics are retained for comparison.")
     cols = st.columns(4)
     for col, source in zip(cols, ["text", "meta", "prior", "fused"]):
         col.metric(

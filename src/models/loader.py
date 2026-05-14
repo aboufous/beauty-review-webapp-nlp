@@ -106,15 +106,15 @@ class Task3BestPredictor:
         )
 
 
-_PREDICTOR: Task3BestPredictor | None = None
+_PREDICTOR: FusedPredictor | None = None
 _SENTIMENT_MODEL: sentiment_model.SentimentModel | None = None
 
 
-def load_predictor() -> Task3BestPredictor:
-    """Lazy singleton — safe to call from any Streamlit page."""
+def load_predictor() -> FusedPredictor:
+    """Lazy singleton for the final HD fusion predictor."""
     global _PREDICTOR
     if _PREDICTOR is None:
-        _PREDICTOR = Task3BestPredictor()
+        _PREDICTOR = FusedPredictor()
     return _PREDICTOR
 
 

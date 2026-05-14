@@ -15,16 +15,16 @@ What this is
 ================================================================================
 "GlowMate Beauty Store" — a Streamlit web application that lets shoppers
 browse a cosmetics catalogue, write reviews, and see similar-item
-recommendations. The recommendation-label predictor for new reviews uses
-the Task 3 best model from the notebook: TF-IDF(1,2) review text + title,
-plus one-hot product metadata, with LogisticRegression(C=1.0,
-class_weight="balanced").
+recommendations. The final recommendation-label predictor for new reviews is
+a DI/HD fusion model that combines three independently trained models using
+different data types: review text, structured metadata, and product/brand
+history.
 
 Four tasks, four pages:
-- Task 1  pages/browse_and_search.py   Fuzzy keyword search (rapidfuzz)
-- Task 2  pages/product_detail.py      Review form + Task 3 best-model label
-- Task 3  pages/product_detail.py      Hybrid similar-items recommender
-- Task 4  pages/admin_dashboard.py     Admin operations dashboard
+- Task 1  pages/Browse_And_Search.py   Fuzzy keyword search (rapidfuzz)
+- Task 2  pages/Product_Detail.py      Review form + fused-model label
+- Task 3  pages/Product_Detail.py      Hybrid similar-items recommender
+- Task 4  pages/Admin_Dashboard.py     Admin operations dashboard
 
 Search note (Task 1): the brief mentions matching against "brand name
 or description". The Milestone-I dataset has no free-text description
@@ -87,27 +87,50 @@ How to run
    Open the URL Streamlit prints (typically http://localhost:8501).
 
 ================================================================================
-Task 3 best buyer classifier
+DI/HD fusion buyer classifier
 ================================================================================
-The active buyer/non-buyer predictor now follows Task 3 from
-MAI_Group5/task2_3.ipynb. The notebook's GridSearchCV winner is:
+The active buyer/non-buyer predictor in Product Detail is the fused model
+required for DI/HD. It combines three independently trained models:
+
+  1. Text model    TF-IDF(1,2) + LogisticRegression(C=2.0, balanced) over
+                   cleaned review title + body.
+  2. Meta model    HistGradientBoosting on review rating, price,
+                   avg_product_rating, product_rating_count, text/title
+                   length, tag count, and brand bucket.
+  3. Prior model   Bayesian-smoothed product and brand prior for
+                   P(is_a_buyer).
+
+The three probabilities are fused by a LogisticRegression stacker trained on
+out-of-fold predictions. This is the final result shown in the web app.
+
+Held-out test metrics in models/metrics.json:
+
+    text   Macro-F1 0.627   acc 0.706
+    meta   Macro-F1 0.715   acc 0.834
+    prior  Macro-F1 0.676   acc 0.818
+    fused  Macro-F1 0.741   acc 0.841
+
+Task 3 notebook benchmark:
+
+MAI_Group5/task2_3.ipynb also reports a best single-model GridSearchCV
+benchmark:
 
     TF-IDF(1,2) + one-hot metadata
     LogisticRegression(C=1.0, class_weight="balanced")
     Macro-F1 0.7110
 
-Features used:
+Benchmark features:
   - cleaned review text + review title with unigram/bigram TF-IDF;
   - price_log1p, avg_product_rating, rating_count_log1p;
   - one-hot encoded brand_name.
 
-The trained app artifact is models/task3_best_buyer_model.joblib and is
-loaded through src/models/loader.py. The older fused artifacts are kept in
-models/ for comparison and dashboard context, but Product Detail uses the
-Task 3 best model as requested.
+The benchmark artifact is models/task3_best_buyer_model.joblib and is kept
+for traceability/documentation, but Product Detail uses the fused model as
+the final DI/HD prediction.
 
 See docs/task3_model_summary.md for the marker-facing summary of the source
-notebook, features, Macro-F1, artifact path, and label interpretation.
+notebook, fusion choice, benchmark features, Macro-F1, artifact paths, and
+label interpretation.
 
 ================================================================================
 File layout
@@ -144,7 +167,7 @@ Notes
   catalogue, so the synthetic SVG is the intended visual.
 - New reviews are persisted to data/reviews.csv (atomic write). Pages that
   read reviews use a short-TTL Streamlit cache so saves are visible quickly.
-- The Task 3 best predictor is loaded lazily as a process-level singleton via
+- The fused predictor is loaded lazily as a process-level singleton via
   src/models/loader.py — pages never load joblib files directly.
 
 ================================================================================

@@ -59,8 +59,13 @@ def render_prediction_panel(pending: dict, product: dict):
 		st.progress(pred.proba)
 
 		s1, s2 = st.columns(2)
-		s1.metric("Customer sentiment", sentiment, delta=f"{sentiment_confidence:.0%} confidence")
-		s2.metric("Suggested action", action)
+		with s1:
+			st.caption("CUSTOMER SENTIMENT")
+			st.markdown(f"### {sentiment.lower()}")
+			st.caption(f"{sentiment_confidence:.0%} CONFIDENCE")
+		with s2:
+			st.caption("SUGGESTED ACTION")
+			st.markdown(f"### {action.lower()}")
 		if pred.label and sentiment == "Negative":
 			st.warning(
 				"This is a negative review from someone who still appears to be a real buyer. "
@@ -69,24 +74,22 @@ def render_prediction_panel(pending: dict, product: dict):
 
 		breakdown = pd.DataFrame(
 			{
-				"component": [
-					"TF-IDF review text + title",
-					"Product metadata",
-					"Brand one-hot features",
-				],
-				"used by model": ["Yes", "Yes", "Yes"],
-				"notes": [
-					"Unigrams + bigrams from cleaned review text and title",
-					"price_log1p, avg_product_rating, rating_count_log1p",
-					"Same one-hot metadata design as Task 3 notebook",
+				"source": ["Review text", "Rating + metadata", "Product history prior"],
+				"probability": [pred.proba_text, pred.proba_meta, pred.proba_prior],
+				"relative weight": [pred.weight_text, pred.weight_meta, pred.weight_prior],
+				"data type": [
+					"TF-IDF text from review title/body",
+					"Tabular review + product metadata",
+					"Bayesian-smoothed product/brand behaviour",
 				],
 			}
 		)
 		st.dataframe(breakdown, hide_index=True, use_container_width=True)
 		st.caption(
-			"**Task 3 best model.** This prediction uses the notebook's best "
-			"GridSearchCV buyer classifier: TF-IDF(1,2) + one-hot metadata with "
-			"LogisticRegression(C=1.0, class_weight='balanced'). Notebook Macro-F1 = 0.7110."
+			"**HD final fusion model.** The final verified-buyer prediction fuses "
+			"three independently trained models that use different data types: text, "
+			"structured metadata, and product/brand history. This matches the DI/HD "
+			"requirement for a fused final result."
 		)
 
 		override = st.radio(
@@ -166,7 +169,7 @@ if pid_raw is None:
 		placeholder="Type to filter by brand or product name…",
 	)
 	if pick is None:
-		st.link_button("🛍 …or go to Browse", "/browse_and_search")
+		st.link_button("🛍 …or go to Browse", "/Browse_And_Search")
 		st.stop()
 	st.query_params["product_id"] = str(pick)
 	st.rerun()
@@ -198,7 +201,7 @@ with top_r:
 		st.caption(f"Tags: {product['product_tags']}")
 	if product.get("product_url"):
 		st.markdown(f"[Original product page ↗]({product['product_url']})")
-	st.link_button("Choose another product", "/product_detail?clear_product=1")
+	st.link_button("Choose another product", "/Product_Detail?clear_product=1")
 
 st.divider()
 
@@ -259,7 +262,7 @@ if submitted:
 		st.error("Review text is required.")
 	else:
 		try:
-			with st.spinner("Running the Task 3 best buyer-authenticity model..."):
+			with st.spinner("Running the HD fusion buyer-authenticity model..."):
 				predictor = load_predictor()
 				pred = predictor.predict(
 					review={"review_title": title, "review_text": body, "review_rating": rating},
