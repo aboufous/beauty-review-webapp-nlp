@@ -9,6 +9,6 @@ See ``notebooks/Task3_Recommendation.ipynb`` for the full design rationale.
 """
 from __future__ import annotations
 
-from src.recommender import similar_products, has_dense_vectors  # noqa: F401
+from src.recommender import has_dense_vectors, similar_products  # noqa: F401
 
 __all__ = ["similar_products", "has_dense_vectors"]

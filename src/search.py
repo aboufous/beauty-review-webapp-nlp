@@ -14,6 +14,7 @@ Filtering pipeline (4 layers):
 from __future__ import annotations
 
 import re
+
 import pandas as pd
 from rapidfuzz import fuzz, process
 
@@ -219,7 +220,7 @@ def search(
         return products.iloc[0:0].assign(_score=[])
 
     idx_order = [i for i, _ in hits]
-    scores    = {i: s for i, s in hits}
+    scores = {i: s for i, s in hits}
 
     out = products.loc[idx_order].copy()
     out["_score"] = [scores[i] for i in idx_order]

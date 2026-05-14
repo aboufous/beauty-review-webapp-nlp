@@ -24,9 +24,9 @@ st.write(
 
 - 🛍 **Browse & search** a catalogue of 295 cosmetics products with fuzzy
   keyword matching (tolerates typos and word-order changes).
-- 📝 **Write a review** for any product — three independently-trained models
-  (text · rating-and-metadata · product-history prior) are **fused** to predict
-  whether the review reads like it came from a verified buyer.
+- 📝 **Write a review** for any product — the Task 3 best classifier
+  (TF-IDF(1,2) review text + title, plus product metadata) predicts whether
+  the review reads like it came from a verified buyer.
 - ✨ **Similar items** are surfaced via TF-IDF cosine similarity on every
   product page.
 - 📊 An **admin dashboard** summarises sentiment, brand patterns, and how often
@@ -37,20 +37,26 @@ st.write(
 st.subheader("Pick a place to start")
 c1, c2, c3 = st.columns(3)
 with c1:
-    st.page_link("pages/1_🛍_Browse_and_Search.py", label="**Browse the catalogue**", icon="🛍")
+    st.page_link("pages/browse_and_search.py", label="**Browse the catalogue**", icon="🛍")
     st.caption("Search by brand, product name, or tag.")
 with c2:
-    st.page_link("pages/2_📦_Product_Detail.py", label="**Open a product (after browsing)**", icon="📦")
-    st.caption("Write a review and see the fused-model label.")
+    st.page_link("pages/product_detail.py", label="**Open a product (after browsing)**", icon="📦")
+    st.caption("Write a review and see the Task 3 best-model label.")
 with c3:
-    st.page_link("pages/3_📊_Admin_Dashboard.py", label="**Admin dashboard**", icon="📊")
+    st.page_link("pages/admin_dashboard.py", label="**Admin dashboard**", icon="📊")
     st.caption("Sentiment, brand trends, override rate.")
 
 # Surface the trained metrics on the landing page so reviewers can see them at a glance.
 metrics_path = ROOT / "models" / "metrics.json"
 if metrics_path.exists():
     metrics = json.loads(metrics_path.read_text())
-    with st.expander("Trained-model metrics (test split)"):
+    with st.expander("Trained-model metrics"):
+        st.metric(
+            "Task 3 best model — Macro-F1",
+            "0.711",
+            help="Notebook GridSearchCV result: TF-IDF(1,2)+one-hot metadata + LogisticRegression(C=1.0, balanced).",
+        )
+        st.caption("Legacy fused-model test metrics are kept below for comparison.")
         cols = st.columns(4)
         for col, src in zip(cols, ["text", "meta", "prior", "fused"]):
             col.metric(

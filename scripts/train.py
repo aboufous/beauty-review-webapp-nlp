@@ -18,24 +18,20 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import StratifiedKFold, cross_val_predict, train_test_split
+from sklearn.model_selection import (StratifiedKFold, cross_val_predict,
+                                     train_test_split)
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.data import REVIEWS_CSV, PRODUCTS_CSV  # noqa: E402
-from src.models import fusion, meta_model, prior_model, text_model  # noqa: E402
-from src.models.loader import (  # noqa: E402
-    FUSION_PATH,
-    META_BUNDLE_PATH,
-    METRICS_PATH,
-    MODELS_DIR,
-    PRIOR_PATH,
-    PRODUCT_INDEX_PATH,
-    PRODUCT_TFIDF_PATH,
-    TEXT_PIPELINE_PATH,
-    TFIDF_PATH,
-)
+from src.data import PRODUCTS_CSV, REVIEWS_CSV  # noqa: E402
+from src.models import (fusion, meta_model, prior_model, sentiment_model,  # noqa: E402
+                        task3_best_model, text_model)
+from src.models.loader import (FUSION_PATH, META_BUNDLE_PATH,  # noqa: E402
+                               METRICS_PATH, MODELS_DIR, PRIOR_PATH,
+                               PRODUCT_INDEX_PATH, PRODUCT_TFIDF_PATH,
+                               SENTIMENT_PATH, TASK3_BEST_PATH,
+                               TEXT_PIPELINE_PATH, TFIDF_PATH)
 from src.preprocess import clean_text  # noqa: E402
 
 SEED = 42
@@ -185,6 +181,22 @@ def build_product_tfidf(text_pipeline, reviews: pd.DataFrame, products: pd.DataF
     print(f"[task3] wrote {PRODUCT_TFIDF_PATH.name} — shape {mat.shape}")
 
 
+def train_sentiment(reviews: pd.DataFrame):
+    print("\n[sentiment] fitting customer sentiment model from text + rating …")
+    sm = sentiment_model.train(reviews)
+    joblib.dump(sm, SENTIMENT_PATH)
+    print(f"[sentiment] wrote {SENTIMENT_PATH.name}")
+    return sm
+
+
+def train_task3_best(reviews: pd.DataFrame):
+    print("\n[task3-best] fitting TF-IDF(1,2)+metadata LogisticRegression …")
+    model = task3_best_model.train(reviews)
+    joblib.dump(model, TASK3_BEST_PATH)
+    print(f"[task3-best] wrote {TASK3_BEST_PATH.name}")
+    return model
+
+
 def main() -> int:
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     print("Loading data …")
@@ -209,6 +221,8 @@ def main() -> int:
     joblib.dump({"pipeline": meta_pipeline, "top_brands": top_brands}, META_BUNDLE_PATH)
     joblib.dump(pm, PRIOR_PATH)
     joblib.dump(fm, FUSION_PATH)
+    train_task3_best(reviews)
+    train_sentiment(reviews)
 
     build_product_tfidf(text_pipeline, reviews, products)
 
