@@ -129,6 +129,11 @@ def render_prediction_panel(pending: dict, product: dict):
 
 
 products = cached_products()
+if st.query_params.get("clear_product") == "1":
+	st.session_state.pop("current_product_id", None)
+	st.session_state.pop("pending_review", None)
+	st.query_params.clear()
+
 pid_raw = st.query_params.get("product_id")
 if pid_raw is None and "selected_product_id" in st.session_state:
 	pid_raw = st.session_state.pop("selected_product_id")
@@ -136,7 +141,11 @@ if pid_raw is None and "selected_product_id" in st.session_state:
 if pid_raw is None and "current_product_id" in st.session_state:
 	pid_raw = st.session_state["current_product_id"]
 	st.query_params["product_id"] = str(pid_raw)
-if pid_raw is None and "pending_review" in st.session_state:
+if (
+	pid_raw is None
+	and st.session_state.get("scroll_to_prediction", False)
+	and "pending_review" in st.session_state
+):
 	pid_raw = st.session_state["pending_review"].get("product_id")
 	if pid_raw is not None:
 		st.query_params["product_id"] = str(pid_raw)
@@ -157,7 +166,7 @@ if pid_raw is None:
 		placeholder="Type to filter by brand or product name…",
 	)
 	if pick is None:
-		st.page_link("pages/browse_and_search.py", label="…or go to Browse", icon="🛍")
+		st.link_button("🛍 …or go to Browse", "/browse_and_search")
 		st.stop()
 	st.query_params["product_id"] = str(pick)
 	st.rerun()
@@ -168,8 +177,8 @@ if product is None:
 	st.query_params.clear()
 	st.stop()
 
-st.session_state["current_product_id"] = str(product["product_id"])
 st.query_params["product_id"] = str(product["product_id"])
+st.session_state["current_product_id"] = str(product["product_id"])
 
 top_l, top_r = st.columns([1, 2])
 with top_l:
@@ -189,6 +198,7 @@ with top_r:
 		st.caption(f"Tags: {product['product_tags']}")
 	if product.get("product_url"):
 		st.markdown(f"[Original product page ↗]({product['product_url']})")
+	st.link_button("Choose another product", "/product_detail?clear_product=1")
 
 st.divider()
 
@@ -265,7 +275,6 @@ if submitted:
 				"signature": current_review_signature,
 			}
 			st.session_state["scroll_to_prediction"] = True
-			st.session_state["current_product_id"] = str(product["product_id"])
 			st.query_params["product_id"] = str(product["product_id"])
 			st.success("Prediction ready. Review the result below, then save or override it.")
 			st.rerun()
