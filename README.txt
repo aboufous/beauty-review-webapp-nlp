@@ -26,6 +26,12 @@ Four tasks, four pages:
 - Task 3  pages/2_📦_Product_Detail.py      Similar items (TF-IDF cosine)
 - Task 4  pages/3_📊_Admin_Dashboard.py     Plotly analytics
 
+Search note (Task 1): the brief mentions matching against "brand name
+or description". The Milestone-I dataset has no free-text description
+column, so the search field concatenates brand_name + product_title +
+product_tags as the closest faithful equivalent — tags carry the
+category/ingredient keywords that a description would normally cover.
+
 ================================================================================
 How to run
 ================================================================================
@@ -61,18 +67,31 @@ Fused architecture (Task 2, HD)
 ================================================================================
 Three independently-trained classifiers, each on a different data type:
 
-  1. Text model    TF-IDF(1,2) + LogisticRegression(C=2.0, balanced)
-                   — the exact GridSearchCV winner from Milestone I.
-  2. Meta model    HistGradientBoosting (calibrated) on review_rating,
-                   price, avg_product_rating, product_rating_count,
-                   plus one-hot top-25 brand bucket.
-  3. Prior model   Bayesian-smoothed per-product P(is_a_buyer);
-                   falls back to per-brand, then global rate.
+  1. Text model    TF-IDF(1,2) + LogisticRegression(C=2.0, balanced) over
+                   cleaned title+body tokens. Same M1-style preprocessing
+                   pipeline (regex / lowercase / stopwords / min_df=5).
+  2. Meta model    HistGradientBoosting (isotonic-calibrated) on numeric
+                   features (review_rating, price, avg_product_rating,
+                   product_rating_count, text/title length, n_tags) plus
+                   a one-hot top-25 brand bucket. Strictly tabular — no
+                   review content.
+  3. Prior model   Bayesian-smoothed per-product P(is_a_buyer); falls
+                   back to per-brand rate, then the global rate.
 
-Their probabilities are stacked by a LogisticRegression meta-learner fit
-on 5-fold out-of-fold predictions to avoid leakage. Held-out test
-Macro-F1 of the fused predictor is ~0.74 — meaningfully above the best
-M1 single-model number (~0.73).
+Their probabilities are stacked by a LogisticRegression meta-learner
+fit on 5-fold out-of-fold predictions so the meta-learner never sees
+in-sample base predictions.
+
+Held-out test (15% stratified split, n=9,192) — see models/metrics.json:
+    text   Macro-F1 0.627   acc 0.706
+    meta   Macro-F1 0.715   acc 0.834
+    prior  Macro-F1 0.676   acc 0.818
+    fused  Macro-F1 0.741   acc 0.841
+
+Fusion lifts Macro-F1 by ~+2.6 over the strongest base (meta). The
+stacker's relative weights are text 20% · meta 59% · prior 21% — the
+tabular signal carries most of the load on this dataset, with text and
+prior contributing complementary lift via the stacker.
 
 ================================================================================
 File layout
@@ -116,4 +135,16 @@ Video demo
 ================================================================================
 A ≤ 4-minute walk-through covering: browsing + fuzzy search, opening a
 product, writing a review with override, similar items, and the admin
-dashboard. See the .mp4 in the submission zip.
+dashboard. File: MAI_Group5_demo.mp4 (included in the submission zip).
+
+================================================================================
+Large files (OneDrive)
+================================================================================
+The zipped submission exceeds Canvas' 50 MB limit because of MAI_Group5/
+(M1 raw dataset + vectors) and the trained joblib artifacts under
+models/. The full bundle is mirrored on OneDrive:
+
+    OneDrive URL: <REPLACE_WITH_ONE_DRIVE_LINK_BEFORE_SUBMISSION>
+
+Access is granted to anyone in the @rmit.edu.au tenancy. If the link
+is not reachable please contact any group member listed above.

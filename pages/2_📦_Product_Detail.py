@@ -51,7 +51,6 @@ if product is None:
     st.query_params.clear()
     st.stop()
 
-# === Header
 top_l, top_r = st.columns([1, 2])
 with top_l:
     st.image(
@@ -73,7 +72,6 @@ with top_r:
 
 st.divider()
 
-# === Task 2 — Write a review with fused-model label
 st.subheader("📝 Write a review")
 st.caption(
     "Submit a review and we'll predict whether it reads like it came from "
@@ -81,8 +79,8 @@ st.caption(
 )
 
 with st.form("review_form", clear_on_submit=False):
-    title = st.text_input("Review title", placeholder="Summarise your impression")
-    body = st.text_area("Review text", height=150, placeholder="What did you actually think?")
+    title = st.text_input("Review title (optional)", placeholder="Summarise your impression")
+    body = st.text_area("Review text", height=150, placeholder="What did you actually think? (required)")
     rating = st.slider("Your rating", 1, 5, 4)
     author = st.text_input("Your display name (optional)", placeholder="Anonymous")
     submitted = st.form_submit_button("Predict & continue", type="primary", use_container_width=True)
@@ -115,7 +113,7 @@ if pending:
         {
             "source": ["Review text", "Rating + metadata", "Product history prior"],
             "probability": [pred.proba_text, pred.proba_meta, pred.proba_prior],
-            "weight in fusion": [pred.weight_text, pred.weight_meta, pred.weight_prior],
+            "relative weight": [pred.weight_text, pred.weight_meta, pred.weight_prior],
         }
     )
     st.dataframe(breakdown, hide_index=True, use_container_width=True)
@@ -123,7 +121,9 @@ if pending:
         "**HD-level fused architecture.** Three independently-trained models — "
         "TF-IDF(1,2) + LR on text · HistGradientBoosting on rating/price/brand · "
         "Bayesian-smoothed per-product prior — combined by a logistic-regression "
-        "stacker fit on out-of-fold probabilities."
+        "stacker fit on out-of-fold probabilities. *Relative weight* = "
+        "|coef|/Σ|coef| from the stacker, shown for interpretability; the LR "
+        "itself also has a sign and an intercept."
     )
 
     override = st.radio(
@@ -163,7 +163,6 @@ if pending:
         st.success(f"Saved! Review id **{rid}** — bookmark this URL to revisit.")
         st.rerun()
 
-# === Existing reviews
 st.divider()
 st.subheader("💬 Reviews")
 focus_rid = st.query_params.get("review_id")
