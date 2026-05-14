@@ -59,7 +59,7 @@ def _searchable(row) -> str:
     """Build a normalised search string for a single product row,
     carefully skipping NaN or 'nan' strings that pollute the text."""
     parts = []
-    for col in ("brand_name", "product_name", "product_tags"):
+    for col in ("brand_name", "product_title", "product_tags"):
         val = row.get(col)
         # Keep only non‑null, non‑empty values that are not the string "nan"
         if pd.notna(val) and str(val).strip().lower() not in ("", "nan", "none"):
