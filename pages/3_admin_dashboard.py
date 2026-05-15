@@ -180,8 +180,8 @@ if METRICS_PATH.exists():
         "The active app prediction is the DI/HD fusion model. "
         "Task 3 notebook best single model Macro-F1 = 0.7110 and is retained as benchmark documentation."
     )
-    cols = st.columns(4)
-    for col, source in zip(cols, ["text", "meta", "prior", "fused"]):
+    cols = st.columns(3)
+    for col, source in zip(cols, ["text", "meta", "fused"]):
         col.metric(
             f"{source.title()} model — Macro-F1",
             f"{metrics['test_macro_f1'][source]:.3f}",
@@ -189,7 +189,7 @@ if METRICS_PATH.exists():
         )
     w = metrics["fusion_weights"]
     st.caption(
-        f"Fusion weights — text: **{w['text']:.0%}** · meta: **{w['meta']:.0%}** · prior: **{w['prior']:.0%}**"
+        f"Fusion weights — text: **{w['text']:.0%}** · meta: **{w['meta']:.0%}**"
     )
 else:
     st.warning("`models/metrics.json` missing — run `python scripts/train.py`.")

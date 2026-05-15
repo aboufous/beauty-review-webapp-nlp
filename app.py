@@ -53,8 +53,8 @@ if metrics_path.exists():
     with st.expander("Trained-model metrics"):
         st.metric("Active fused model — Macro-F1", f"{metrics['test_macro_f1']['fused']:.3f}")
         st.caption("Task 3 notebook best single model: Macro-F1 0.7110, kept as benchmark documentation.")
-        cols = st.columns(4)
-        for col, src in zip(cols, ["text", "meta", "prior", "fused"]):
+        cols = st.columns(3)
+        for col, src in zip(cols, ["text", "meta", "fused"]):
             col.metric(
                 f"{src.title()} Macro-F1",
                 f"{metrics['test_macro_f1'][src]:.3f}",
@@ -62,7 +62,7 @@ if metrics_path.exists():
             )
         w = metrics["fusion_weights"]
         st.caption(
-            f"Fusion weights — text {w['text']:.0%} · meta {w['meta']:.0%} · prior {w['prior']:.0%}"
+            f"Fusion weights — text {w['text']:.0%} · meta {w['meta']:.0%}"
         )
 else:
     st.warning("Run `python scripts/build_catalog.py && python scripts/train.py` before launching.")

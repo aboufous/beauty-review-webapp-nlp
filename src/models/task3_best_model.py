@@ -24,6 +24,8 @@ class Task3BestBuyerModel:
     brand_columns: list[str]
     price_median: float
     avg_rating_median: float
+    # Ngưỡng quyết định buyer/non-buyer cho Task3 — default = train base rate.
+    decision_threshold: float = 0.5
 
     def _metadata_frame(self, rows: list[dict]) -> pd.DataFrame:
         df = pd.DataFrame(rows)
@@ -128,4 +130,5 @@ def train(reviews: pd.DataFrame) -> Task3BestBuyerModel:
         brand_columns=brand_ohe.columns.tolist(),
         price_median=price_median,
         avg_rating_median=avg_rating_median,
+        decision_threshold=float(df["is_a_buyer"].mean()),
     )

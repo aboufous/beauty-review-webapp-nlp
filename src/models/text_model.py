@@ -48,10 +48,22 @@ def review_corpus(df) -> list[str]:
 
 
 def predict_proba_one(pipeline: Pipeline, title: str, body: str) -> float:
-    """P(is_a_buyer=True) for a single review."""
+    """P(is_a_buyer=True) for a single review.
+
+    Returns 0.5 (no-info) when the cleaned text has zero in-vocabulary tokens —
+    i.e. empty input, pure gibberish, or text whose only words were filtered by
+    ``min_df``. Without this guard the LR falls back to its intercept, which is
+    biased toward the majority class (78.7% buyer) and would label every
+    gibberish review as a buyer.
+    """
     text = clean_text(f"{title or ''} {body or ''}")
-    proba = pipeline.predict_proba([text])[0]
-    classes = list(pipeline.classes_)
-    # Handle both boolean and int class labels.
+    if not text.strip():
+        return 0.5
+    tfidf = pipeline.named_steps["tfidf"]
+    vec = tfidf.transform([text])
+    if vec.nnz == 0:
+        return 0.5
+    proba = pipeline.named_steps["clf"].predict_proba(vec)[0]
+    classes = list(pipeline.named_steps["clf"].classes_)
     pos_idx = classes.index(True) if True in classes else classes.index(1)
     return float(proba[pos_idx])

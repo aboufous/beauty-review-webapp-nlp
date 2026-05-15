@@ -1,6 +1,17 @@
-"""Metadata classifier on rating + price + brand + product stats.
+"""Metadata classifier — review-level features only.
 
-Strictly tabular features — no text content. Calibrated for fusion.
+Earlier versions of this model mixed in product-level features (price,
+avg_product_rating, product_rating_count, brand_bucket, n_tags). Those leaked
+product identity into the meta signal: on a popular product every review got
+the same proba near 1.0, regardless of content (see task2_report.html
+"Hạn chế..."). To force the meta channel to react to the review itself, the
+feature set is now restricted to attributes derived from the review row:
+
+    - review_rating
+    - review_text_len
+    - review_title_len
+
+Same Calibrated HistGradientBoosting backbone — only the inputs change.
 """
 from __future__ import annotations
 
@@ -9,53 +20,34 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
 
 NUMERIC_FEATURES = [
     "review_rating",
-    "price",
-    "avg_product_rating",
-    "product_rating_count",
     "review_text_len",
     "review_title_len",
-    "n_tags",
 ]
-CATEGORICAL_FEATURES = ["brand_bucket"]
-TOP_K_BRANDS = 25
+CATEGORICAL_FEATURES: list[str] = []
 
 
 def derive_features(df: pd.DataFrame, top_brands: list[str] | None = None) -> tuple[pd.DataFrame, list[str]]:
-    """Pull / compute the meta features. Returns (X, top_brands)."""
+    """Pull / compute the review-level meta features.
+
+    The ``top_brands`` argument is kept for backwards compatibility with the
+    training script and loader bundle — it is no longer used. Returns an empty
+    list as the second element.
+    """
     out = pd.DataFrame(index=df.index)
     out["review_rating"] = pd.to_numeric(df.get("review_rating"), errors="coerce")
-    out["price"] = pd.to_numeric(df.get("price"), errors="coerce")
-    out["avg_product_rating"] = pd.to_numeric(df.get("avg_product_rating"), errors="coerce")
-    out["product_rating_count"] = pd.to_numeric(df.get("product_rating_count"), errors="coerce")
     out["review_text_len"] = df.get("review_text", "").fillna("").astype(str).str.len()
     out["review_title_len"] = df.get("review_title", "").fillna("").astype(str).str.len()
-    out["n_tags"] = (
-        df.get("product_tags", "").fillna("").astype(str).str.count(",") + 1
-    ).where(df.get("product_tags", "").fillna("") != "", 0)
-
-    if top_brands is None:
-        top_brands = (
-            df["brand_name"].fillna("__missing__").value_counts().head(TOP_K_BRANDS).index.tolist()
-        )
-    brand = df["brand_name"].fillna("__missing__")
-    out["brand_bucket"] = brand.where(brand.isin(top_brands), "__other__")
-    return out, top_brands
+    return out, []
 
 
 def build_pipeline() -> Pipeline:
-    """Calibrated HistGradientBoosting on numeric + one-hot brand."""
+    """Calibrated HistGradientBoosting on review-level numeric features."""
     preproc = ColumnTransformer(
         transformers=[
             ("num", "passthrough", NUMERIC_FEATURES),
-            (
-                "cat",
-                OneHotEncoder(handle_unknown="ignore", sparse_output=False),
-                CATEGORICAL_FEATURES,
-            ),
         ],
         remainder="drop",
     )

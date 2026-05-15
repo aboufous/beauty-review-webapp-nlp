@@ -55,7 +55,12 @@ def render_prediction_panel(pending: dict, product: dict):
 		st.markdown("#### Prediction result")
 		st.caption("This review has not been saved yet. Confirm the final label below.")
 		label_str = "✅ Likely **verified buyer**" if pred.label else "🚫 Likely **non-buyer / unverified**"
-		st.markdown(f"**Verified-buyer prediction:** {label_str}  ·  confidence **{pred.proba:.0%}**")
+		predictor = load_predictor()
+		thr = predictor.fusion.decision_threshold
+		st.markdown(
+			f"**Verified-buyer prediction:** {label_str}  ·  confidence **{pred.proba:.0%}**  "
+			f"(threshold **{thr:.0%}** — chosen from OOF sweep to balance F1 macro & accuracy)"
+		)
 		st.progress(pred.proba)
 
 		s1, s2 = st.columns(2)
@@ -74,22 +79,23 @@ def render_prediction_panel(pending: dict, product: dict):
 
 		breakdown = pd.DataFrame(
 			{
-				"source": ["Review text", "Rating + metadata", "Product history prior"],
-				"probability": [pred.proba_text, pred.proba_meta, pred.proba_prior],
-				"relative weight": [pred.weight_text, pred.weight_meta, pred.weight_prior],
+				"source": ["Review text", "Rating + review-shape"],
+				"probability": [pred.proba_text, pred.proba_meta],
+				"relative weight": [pred.weight_text, pred.weight_meta],
 				"data type": [
 					"TF-IDF text from review title/body",
-					"Tabular review + product metadata",
-					"Bayesian-smoothed product/brand behaviour",
+					"Review rating + title/body length",
 				],
 			}
 		)
 		st.dataframe(breakdown, hide_index=True, use_container_width=True)
 		st.caption(
-			"**HD final fusion model.** The final verified-buyer prediction fuses "
-			"three independently trained models that use different data types: text, "
-			"structured metadata, and product/brand history. This matches the DI/HD "
-			"requirement for a fused final result."
+			"**HD fusion model.** The final verified-buyer prediction fuses two "
+			"independently trained models that both read the review: a TF-IDF text "
+			"classifier and a tabular classifier on rating + review-length signals. "
+			"The earlier product-history prior was removed — it returned the same "
+			"product's historical buyer rate and dominated the fused score regardless "
+			"of review content (see task2_report.html limitations)."
 		)
 
 		override = st.radio(
