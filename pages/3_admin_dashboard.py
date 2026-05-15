@@ -114,7 +114,11 @@ brand_options = sorted(reviews["brand_name"].dropna().astype(str).unique().tolis
 selected_brands = st.sidebar.multiselect("Brands", brand_options, default=brand_options)
 source_options = ["Seed dataset", "User submitted"]
 selected_sources = st.sidebar.multiselect("Review source", source_options, default=source_options)
-buyer_filter = st.sidebar.radio("Final label", ["All", "Buyer", "Non-buyer"], horizontal=True)
+buyer_filter = st.sidebar.radio(
+    "Final label",
+    ["All", "Verified buyer", "Non-buyer / unverified"],
+    horizontal=True,
+)
 min_risk = st.sidebar.slider("Minimum risk score", 0, 100, 0, step=5)
 
 filtered = reviews.copy()
@@ -126,9 +130,9 @@ if selected_brands:
     filtered = filtered[filtered["brand_name"].astype(str).isin(selected_brands)]
 if selected_sources:
     filtered = filtered[filtered["_source"].isin(selected_sources)]
-if buyer_filter == "Buyer":
+if buyer_filter == "Verified buyer":
     filtered = filtered[filtered["_is_buyer"].eq(True)]
-elif buyer_filter == "Non-buyer":
+elif buyer_filter == "Non-buyer / unverified":
     filtered = filtered[filtered["_is_buyer"].eq(False)]
 filtered = filtered[filtered["_risk_score"].ge(min_risk)]
 
@@ -145,7 +149,7 @@ st.subheader("Store health")
 k1, k2, k3, k4, k5 = st.columns(5)
 k1.metric("Reviews in view", f"{len(filtered):,}", delta=f"{len(filtered) - len(reviews):+,}")
 k2.metric(
-    "Buyer rate",
+    "Verified buyer rate",
     f"{buyer_rate:.0%}" if pd.notna(buyer_rate) else "—",
     delta=_metric_delta(buyer_rate * 100, baseline_buyer_rate * 100, "{:+.1f} pp")
     if pd.notna(buyer_rate)
@@ -160,7 +164,7 @@ k4.metric(
 k5.metric(
     "Urgent review queue",
     f"{urgent_count:,}",
-    delta=f"{non_buyer_rate:.0%} non-buyer" if pd.notna(non_buyer_rate) else None,
+    delta=f"{non_buyer_rate:.0%} non-buyer / unverified" if pd.notna(non_buyer_rate) else None,
 )
 
 st.download_button(
@@ -300,7 +304,7 @@ with tabs[1]:
                 hover_data={"reviews": True, "urgent": True, "buyer_rate": ":.0%"},
                 color_continuous_scale=["#16a34a", "#f59e0b", "#dc2626"],
                 labels={
-                    "buyer_rate": "Buyer rate",
+                    "buyer_rate": "Verified buyer rate",
                     "avg_rating": "Average rating",
                     "avg_risk": "Risk score",
                 },
@@ -366,11 +370,11 @@ with tabs[1]:
         a1, a2, a3 = st.columns(3)
         a1.info(
             f"Prioritise **{weakest_brand['brand_name']}**: "
-            f"{weakest_brand['urgent']} urgent reviews and {weakest_brand['buyer_rate']:.0%} buyer rate."
+            f"{weakest_brand['urgent']} urgent reviews and {weakest_brand['buyer_rate']:.0%} verified buyer rate."
         )
         a2.success(
             f"Use **{strongest_brand['brand_name']}** as a healthy benchmark: "
-            f"{strongest_brand['buyer_rate']:.0%} buyer rate, {strongest_brand['avg_rating']:.2f} avg rating."
+            f"{strongest_brand['buyer_rate']:.0%} verified buyer rate, {strongest_brand['avg_rating']:.2f} avg rating."
         )
         a3.warning(
             "Audit products with high risk but high review volume first; they affect the most shoppers."
@@ -386,7 +390,7 @@ with tabs[2]:
             color="_is_buyer",
             barmode="group",
             nbins=5,
-            labels={"_is_buyer": "Buyer?", "_rating_num": "Rating"},
+            labels={"_is_buyer": "Verified buyer?", "_rating_num": "Rating"},
             color_discrete_map={True: ACCENT_BLUE, False: ACCENT_AMBER},
         )
         fig.update_layout(height=350, margin=dict(l=10, r=10, t=10, b=10))
@@ -408,7 +412,7 @@ with tabs[2]:
                 orientation="h",
                 color="buyer_rate",
                 color_continuous_scale=["#f59e0b", "#14b8a6", "#2563eb"],
-                labels={"n": "Reviews", "brand_name": "Brand", "buyer_rate": "Buyer rate"},
+                labels={"n": "Reviews", "brand_name": "Brand", "buyer_rate": "Verified buyer rate"},
             )
             fig.update_layout(
                 height=350,
@@ -444,14 +448,14 @@ with tabs[2]:
             go.Scatter(
                 x=ts["month"],
                 y=ts["buyer_rate"],
-                name="Buyer rate",
+                name="Verified buyer rate",
                 mode="lines",
                 line=dict(color=ACCENT_AMBER, dash="dot"),
             ),
             secondary_y=True,
         )
         fig.update_yaxes(title_text="Reviews per month", secondary_y=False)
-        fig.update_yaxes(title_text="Buyer rate", range=[0, 1], tickformat=".0%", secondary_y=True)
+        fig.update_yaxes(title_text="Verified buyer rate", range=[0, 1], tickformat=".0%", secondary_y=True)
         fig.update_layout(height=340, margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig, use_container_width=True)
     else:
