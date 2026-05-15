@@ -218,23 +218,6 @@ if pending and pending.get("product_id") != str(product["product_id"]):
 	del st.session_state["pending_review"]
 	pending = None
 
-current_review_signature = review_signature(
-	st.session_state.get("review_title_input", ""),
-	st.session_state.get("review_body_input", ""),
-	st.session_state.get("review_rating_input", 4),
-)
-prediction_is_current = bool(
-	pending and pending.get("signature") == current_review_signature
-)
-
-if pending and prediction_is_current:
-	render_prediction_panel(pending, product)
-elif pending:
-	st.warning(
-		"The review text or rating changed after the last prediction. "
-		"Click **Predict & continue** again to refresh the result."
-	)
-
 with st.form("review_form", clear_on_submit=False):
 	title = st.text_input(
 		"Review title (optional)",
@@ -256,6 +239,17 @@ with st.form("review_form", clear_on_submit=False):
 	submitted = st.form_submit_button("Predict & continue", type="primary", use_container_width=True)
 
 current_review_signature = review_signature(title, body, rating)
+prediction_is_current = bool(
+	pending and pending.get("signature") == current_review_signature
+)
+
+if pending and prediction_is_current:
+	render_prediction_panel(pending, product)
+elif pending:
+	st.warning(
+		"The review text or rating changed after the last prediction. "
+		"Click **Predict & continue** again to refresh the result."
+	)
 
 if submitted:
 	if not body.strip():
