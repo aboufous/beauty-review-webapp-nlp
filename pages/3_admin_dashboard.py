@@ -331,7 +331,7 @@ with tabs[1]:
         if len(product_risk):
             display = product_risk.assign(
                 product_link=lambda d: d["product_id"].map(
-                    lambda pid: f"/Product_Detail?product_id={pid}"
+                    lambda pid: f"/product_detail?product_id={pid}"
                 )
             )[
                 [

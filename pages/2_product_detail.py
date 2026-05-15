@@ -169,7 +169,7 @@ if pid_raw is None:
 		placeholder="Type to filter by brand or product name…",
 	)
 	if pick is None:
-		st.link_button("🛍 …or go to Browse", "/Browse_And_Search")
+		st.link_button("🛍 …or go to Browse", "/browse_and_search")
 		st.stop()
 	st.query_params["product_id"] = str(pick)
 	st.rerun()
@@ -201,7 +201,7 @@ with top_r:
 		st.caption(f"Tags: {product['product_tags']}")
 	if product.get("product_url"):
 		st.markdown(f"[Original product page ↗]({product['product_url']})")
-	st.link_button("Choose another product", "/Product_Detail?clear_product=1")
+	st.link_button("Choose another product", "/product_detail?clear_product=1")
 
 st.divider()
 

@@ -37,13 +37,13 @@ st.write(
 st.subheader("Pick a place to start")
 c1, c2, c3 = st.columns(3)
 with c1:
-    st.page_link("pages/Browse_And_Search.py", label="**Browse the catalogue**", icon="🛍")
+    st.page_link("pages/1_browse_and_search.py", label="**Browse the catalogue**", icon="🛍")
     st.caption("Search by brand, product name, or tag.")
 with c2:
-    st.page_link("pages/Product_Detail.py", label="**Open a product (after browsing)**", icon="📦")
+    st.page_link("pages/2_product_detail.py", label="**Open a product (after browsing)**", icon="📦")
     st.caption("Write a review and see the fused-model label.")
 with c3:
-    st.page_link("pages/Admin_Dashboard.py", label="**Admin dashboard**", icon="📊")
+    st.page_link("pages/3_admin_dashboard.py", label="**Admin dashboard**", icon="📊")
     st.caption("Sentiment, brand trends, override rate.")
 
 # Surface the trained metrics on the landing page so reviewers can see them at a glance.

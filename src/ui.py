@@ -148,4 +148,4 @@ def render_product_card(row: dict, *, score: float | None = None, key_prefix: st
             # so we hand the selection over via session_state and let Page 2
             # write it into the URL on arrival.
             st.session_state["selected_product_id"] = str(pid)
-            st.switch_page("pages/Product_Detail.py")
+            st.switch_page("pages/2_product_detail.py")
