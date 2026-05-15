@@ -14,14 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.data import (  # noqa: E402
-    DATA_DIR,
-    PRODUCTS_CSV,
-    REVIEWS_CSV,
-    USER_REVIEW_COLUMNS,
-    build_products,
-    load_raw_reviews,
-)
+from src.data import (DATA_DIR, PRODUCTS_CSV, REVIEWS_CSV,  # noqa: E402
+                      USER_REVIEW_COLUMNS, build_products, load_raw_reviews)
 
 
 def main() -> int:

@@ -1,7 +1,6 @@
 """Text classifier: TF-IDF(1,2) + LogisticRegression — M1 grid-best."""
 from __future__ import annotations
 
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline

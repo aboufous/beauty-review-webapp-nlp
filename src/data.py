@@ -19,7 +19,6 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable
 
 import pandas as pd
 
@@ -28,8 +27,8 @@ DATA_DIR = ROOT / "data"
 PRODUCTS_CSV = DATA_DIR / "products.csv"
 REVIEWS_CSV = DATA_DIR / "reviews.csv"
 
-# Raw M1 source. We treat MAI_Group5/ as read-only.
-M1_RAW_CSV = ROOT / "MAI_Group5" / "cosmetics_beauty_products_reviews.csv"
+# Raw M1 source
+M1_RAW_CSV = "./data/cosmetics_beauty_products_reviews.csv"
 
 RAW_COLUMNS = [
     "product_id",

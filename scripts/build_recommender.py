@@ -22,7 +22,6 @@ to a 3-signal hybrid if these artifacts are missing):
 from __future__ import annotations
 
 import json
-import sys
 import time
 from pathlib import Path
 from typing import Iterator
@@ -30,15 +29,14 @@ from typing import Iterator
 import numpy as np
 import pandas as pd
 
-
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 MODELS_DIR = ROOT / "models"
-REVIEWS_CSV     = DATA_DIR / "reviews.csv"
-WEIGHTED_VEC    = DATA_DIR / "weighted_vectors.txt"
-UNWEIGHTED_VEC  = DATA_DIR / "unweighted_vectors.txt"
-OUT_VECTORS     = MODELS_DIR / "product_vectors.npy"
-OUT_INDEX       = MODELS_DIR / "product_vector_index.json"
+REVIEWS_CSV = DATA_DIR / "reviews.csv"
+WEIGHTED_VEC = DATA_DIR / "weighted_vectors.txt"
+UNWEIGHTED_VEC = DATA_DIR / "unweighted_vectors.txt"
+OUT_VECTORS = MODELS_DIR / "product_vectors.npy"
+OUT_INDEX = MODELS_DIR / "product_vector_index.json"
 
 
 def log(msg: str) -> None:

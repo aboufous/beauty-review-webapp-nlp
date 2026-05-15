@@ -44,7 +44,6 @@ from scipy import sparse
 
 from src.models.loader import load_product_tfidf
 
-
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
@@ -250,12 +249,12 @@ def _attribute_sim(query_pid: str, prep: pd.DataFrame, eng: _EngineState) -> np.
     if q_idx is None:
         return np.zeros(n, dtype=np.float32)
     q_brand = prep["_brand_lc"].iloc[q_idx]
-    q_cat   = prep["_category"].iloc[q_idx]
+    q_cat = prep["_category"].iloc[q_idx]
 
     brand_arr = prep["_brand_lc"].to_numpy()
-    cat_arr   = prep["_category"].to_numpy()
+    cat_arr = prep["_category"].to_numpy()
     same_brand = (brand_arr == q_brand).astype(np.float32)
-    same_cat   = (cat_arr   == q_cat).astype(np.float32)
+    same_cat = (cat_arr == q_cat).astype(np.float32)
     per_product_score = 0.5 * same_brand + 0.5 * same_cat
 
     sims = np.zeros(n, dtype=np.float32)
@@ -362,6 +361,8 @@ def similar_products(
 
     Parameters
     ----------
+    n_candidates
+    mmr_lambda
     product_id : Any
         The id of the anchor product (coerced to ``str``).
     products : DataFrame
@@ -394,10 +395,10 @@ def similar_products(
 
     w = _resolve_weights(weights, has_dense=eng.dense_mat is not None)
     fused = (
-        w["semantic"]  * sem
-        + w["lexical"]   * lex
+        w["semantic"] * sem
+        + w["lexical"] * lex
         + w["attribute"] * attr
-        + w["numeric"]   * num
+        + w["numeric"] * num
     ).astype(np.float32)
 
     # Top-N candidates by fused score, then MMR if requested
@@ -419,7 +420,7 @@ def similar_products(
         # lambda does not visibly change the ranking.
         pid_to_prep_row = {pid: i for i, pid in enumerate(prep["_pid_str"].tolist())}
         brand_arr = prep["_brand_lc"].to_numpy()
-        cat_arr   = prep["_category"].to_numpy()
+        cat_arr = prep["_category"].to_numpy()
 
         def _attr_pair(i: int, j: int) -> float:
             pid_i, pid_j = eng.tfidf_ids[i], eng.tfidf_ids[j]
@@ -429,7 +430,7 @@ def similar_products(
                 return 0.0
             return (
                 0.5 * float(brand_arr[ri] == brand_arr[rj])
-                + 0.5 * float(cat_arr[ri]   == cat_arr[rj])
+                + 0.5 * float(cat_arr[ri] == cat_arr[rj])
             )
 
         if eng.dense_mat is not None:
@@ -462,11 +463,11 @@ def similar_products(
 
     # Attach scores in the same order
     score_lookup = {eng.tfidf_ids[i]: i for i in chosen}
-    out["_score"]           = [float(fused[score_lookup[pid]])  for pid in rec_pids if pid in prep_indexed.index]
-    out["_score_semantic"]  = [float(sem  [score_lookup[pid]])  for pid in rec_pids if pid in prep_indexed.index]
-    out["_score_lexical"]   = [float(lex  [score_lookup[pid]])  for pid in rec_pids if pid in prep_indexed.index]
-    out["_score_attribute"] = [float(attr [score_lookup[pid]])  for pid in rec_pids if pid in prep_indexed.index]
-    out["_score_numeric"]   = [float(num  [score_lookup[pid]])  for pid in rec_pids if pid in prep_indexed.index]
+    out["_score"] = [float(fused[score_lookup[pid]]) for pid in rec_pids if pid in prep_indexed.index]
+    out["_score_semantic"] = [float(sem[score_lookup[pid]]) for pid in rec_pids if pid in prep_indexed.index]
+    out["_score_lexical"] = [float(lex[score_lookup[pid]]) for pid in rec_pids if pid in prep_indexed.index]
+    out["_score_attribute"] = [float(attr[score_lookup[pid]]) for pid in rec_pids if pid in prep_indexed.index]
+    out["_score_numeric"] = [float(num[score_lookup[pid]]) for pid in rec_pids if pid in prep_indexed.index]
 
     # Don't leak the internal prep columns to the caller
     return out.drop(columns=[c for c in ("_brand_lc", "_category", "_price_norm", "_rating_norm") if c in out.columns])

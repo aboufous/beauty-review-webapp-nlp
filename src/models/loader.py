@@ -11,7 +11,7 @@ from pathlib import Path
 import joblib
 from scipy import sparse
 
-from src.models import meta_model, prior_model, text_model
+from src.models import meta_model, prior_model, sentiment_model, task3_best_model, text_model
 from src.models.fusion import FusionModel
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -25,6 +25,8 @@ TFIDF_PATH = MODELS_DIR / "tfidf_vectorizer.joblib"
 PRODUCT_TFIDF_PATH = MODELS_DIR / "product_tfidf_matrix.npz"
 PRODUCT_INDEX_PATH = MODELS_DIR / "product_id_index.json"
 METRICS_PATH = MODELS_DIR / "metrics.json"
+SENTIMENT_PATH = MODELS_DIR / "sentiment_model.joblib"
+TASK3_BEST_PATH = MODELS_DIR / "task3_best_buyer_model.joblib"
 
 
 @dataclass
@@ -37,6 +39,7 @@ class Prediction:
     weight_text: float
     weight_meta: float
     weight_prior: float
+    model_name: str = "Fusion stacker"
 
 
 class FusedPredictor:
@@ -80,18 +83,47 @@ class FusedPredictor:
             weight_text=self.fusion.weight_text,
             weight_meta=self.fusion.weight_meta,
             weight_prior=self.fusion.weight_prior,
+            model_name="Fusion stacker",
+        )
+
+
+class Task3BestPredictor:
+    def __init__(self):
+        self.model: task3_best_model.Task3BestBuyerModel = joblib.load(TASK3_BEST_PATH)
+
+    def predict(self, review: dict, product: dict) -> Prediction:
+        p = self.model.predict_proba_one(review, product)
+        return Prediction(
+            proba=p,
+            label=p >= 0.5,
+            proba_text=p,
+            proba_meta=p,
+            proba_prior=p,
+            weight_text=1.0,
+            weight_meta=0.0,
+            weight_prior=0.0,
+            model_name="Task 3 best: TF-IDF(1,2)+metadata LR",
         )
 
 
 _PREDICTOR: FusedPredictor | None = None
+_SENTIMENT_MODEL: sentiment_model.SentimentModel | None = None
 
 
 def load_predictor() -> FusedPredictor:
-    """Lazy singleton — safe to call from any Streamlit page."""
+    """Lazy singleton for the final HD fusion predictor."""
     global _PREDICTOR
     if _PREDICTOR is None:
         _PREDICTOR = FusedPredictor()
     return _PREDICTOR
+
+
+def load_sentiment_model() -> sentiment_model.SentimentModel:
+    """Lazy singleton for customer sentiment prediction."""
+    global _SENTIMENT_MODEL
+    if _SENTIMENT_MODEL is None:
+        _SENTIMENT_MODEL = joblib.load(SENTIMENT_PATH)
+    return _SENTIMENT_MODEL
 
 
 def load_product_tfidf():
