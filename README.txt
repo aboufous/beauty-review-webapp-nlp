@@ -1,5 +1,7 @@
+﻿Projet en equipe de 4 - RMIT University (2026). Ma contribution : module de recherche floue (src/search.py, page Browse & Search).
+
 COSC3801/3015 Advanced Programming for Data Science
-Assignment 3 — Milestone II: NLP Web-based Data Application
+Assignment 3 â€” Milestone II: NLP Web-based Data Application
 Group: MAI_Group 5
 
 ================================================================================
@@ -13,7 +15,7 @@ Team members
 ================================================================================
 What this is
 ================================================================================
-"GlowMate Beauty Store" — a Streamlit web application that lets shoppers
+"GlowMate Beauty Store" â€” a Streamlit web application that lets shoppers
 browse a cosmetics catalogue, write reviews, and see similar-item
 recommendations. The final recommendation-label predictor for new reviews is
 a DI/HD fusion model that combines three independently trained models using
@@ -29,7 +31,7 @@ Four tasks, four pages:
 Search note (Task 1): the brief mentions matching against "brand name
 or description". The Milestone-I dataset has no free-text description
 column, so the search field concatenates brand_name + product_title +
-product_tags as the closest faithful equivalent — tags carry the
+product_tags as the closest faithful equivalent â€” tags carry the
 category/ingredient keywords that a description would normally cover.
 
 ================================================================================
@@ -160,20 +162,20 @@ docs/
 ================================================================================
 Notes
 ================================================================================
-- Product images are SVG cards generated inline — gradient colour and
+- Product images are SVG cards generated inline â€” gradient colour and
   emoji chosen from the category extracted from the product title
-  (lipstick → 💄, mascara → 🖤, shampoo → 🧴, …). The brief explicitly
+  (lipstick â†’ ðŸ’„, mascara â†’ ðŸ–¤, shampoo â†’ ðŸ§´, â€¦). The brief explicitly
   allows artificial display images for the purpose of showing the
   catalogue, so the synthetic SVG is the intended visual.
 - New reviews are persisted to data/reviews.csv (atomic write). Pages that
   read reviews use a short-TTL Streamlit cache so saves are visible quickly.
 - The fused predictor is loaded lazily as a process-level singleton via
-  src/models/loader.py — pages never load joblib files directly.
+  src/models/loader.py â€” pages never load joblib files directly.
 
 ================================================================================
 Video demo
 ================================================================================
-A ≤ 4-minute walk-through covering: browsing + fuzzy search, opening a
+A â‰¤ 4-minute walk-through covering: browsing + fuzzy search, opening a
 product, writing a review with override, similar items, and the admin
 dashboard. File: MAI_Group5_demo.mp4 (included in the submission zip).
 
@@ -188,3 +190,4 @@ models/. The full bundle is mirrored on OneDrive:
 
 Access is granted to anyone in the @rmit.edu.au tenancy. If the link
 is not reachable please contact any group member listed above.
+
