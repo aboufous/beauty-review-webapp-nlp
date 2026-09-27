@@ -179,15 +179,3 @@ A â‰¤ 4-minute walk-through covering: browsing + fuzzy search, opening a
 product, writing a review with override, similar items, and the admin
 dashboard. File: MAI_Group5_demo.mp4 (included in the submission zip).
 
-================================================================================
-Large files (OneDrive)
-================================================================================
-The zipped submission exceeds Canvas' 50 MB limit because of MAI_Group5/
-(M1 raw dataset + vectors) and the trained joblib artifacts under
-models/. The full bundle is mirrored on OneDrive:
-
-    OneDrive URL: <REPLACE_WITH_ONE_DRIVE_LINK_BEFORE_SUBMISSION>
-
-Access is granted to anyone in the @rmit.edu.au tenancy. If the link
-is not reachable please contact any group member listed above.
-
